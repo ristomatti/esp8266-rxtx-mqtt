@@ -16,8 +16,10 @@ MQTTClient client;
 EspClass esp;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(serialBaud);
   WiFi.begin(wifiSsid, wifiPassword);
+  WiFi.setAutoReconnect(true);
+  WiFi.persistent(true);
   setupMQTT();
 }
 
@@ -59,8 +61,8 @@ void messageReceived(String& topic, String& payload) {
 }
 
 void setupMQTT() {
-  client.begin(mqttHost, 8883, wifiClient);
-  client.setOptions(50, true, 3000);
+  client.begin(host, 8883, wifiClient);
+  client.setOptions(timeout, cleanSession, keepAlive);
   client.setWill(statusTopic, "offline", 1, 1);
   client.onMessage(messageReceived);
 }
@@ -78,13 +80,13 @@ void connect() {
   }
 
   // Serial.print("\nConnecting...");
-  while (!client.connect(mqttClient, mqttUser, mqttPassword)) {
+  while (!client.connect(clientId, user, password)) {
     // Serial.print(".");
     delay(500);
   }
 
   // Serial.println("\nConnected!");
 
-  client.publish(statusTopic, "online", 1, 1);
+  client.publish(statusTopic, "online", 1, 1); // retain, qos 1
   client.subscribe(rxTopic);
 }
